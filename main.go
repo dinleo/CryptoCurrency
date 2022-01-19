@@ -1,9 +1,11 @@
 package main
 
 import (
-	"CryptoCurrency/rest"
+	"CryptoCurrency/cli"
+	"CryptoCurrency/db"
 )
 
 func main() {
-	rest.Start(4000)
+	defer db.Close()
+	cli.Start()
 }

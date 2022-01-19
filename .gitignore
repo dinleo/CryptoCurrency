@@ -4,6 +4,8 @@
 # IntelliJ project files
 .idea
 *.iml
+*.db
+*.lock
 out
 gen
 

@@ -8,12 +8,11 @@ import (
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
-	"strconv"
 )
 
 var port string
 
-// Url handling
+// MarshalText Handling
 type url string
 
 func (u url) MarshalText() ([]byte, error) {
@@ -21,7 +20,7 @@ func (u url) MarshalText() ([]byte, error) {
 	return []byte(url), nil
 }
 
-// struct
+// Struct
 type urlDescription struct {
 	URL         url    `json:"url"`
 	Method      string `json:"method"`
@@ -38,6 +37,7 @@ type errorResponse struct {
 }
 
 // Handle func
+// Home
 func documentation(w http.ResponseWriter, r *http.Request) {
 	pageData := []urlDescription{
 		{
@@ -52,45 +52,25 @@ func documentation(w http.ResponseWriter, r *http.Request) {
 			Payload:     "data:string",
 		},
 		{
-			URL:         url("/blocks/{height}"),
+			URL:         url("/blocks/{hash}"),
 			Method:      "GET",
 			Description: "See A Block",
 		},
 	}
 
 	// Encoding
-	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(pageData)
-
 }
 
-func blocks(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case "GET":
-		// Encoding
-		json.NewEncoder(w).Encode(blockchain.GetBlockchain().AllBlocks())
-	case "POST":
-		var a addBlockBody
-
-		// Decoding
-		utils.HandleErr(json.NewDecoder(r.Body).Decode(&a))
-
-		// Add block
-		blockchain.GetBlockchain().AddBlock(a.Message)
-
-		// Encoding
-		w.WriteHeader(http.StatusCreated)
-	}
-}
-
+// View specific block
 func block(w http.ResponseWriter, r *http.Request) {
-	// Get height from URL
+	// Get hash from URL
 	vars := mux.Vars(r)
 
-	// Get block from height
-	blockNum, err := strconv.Atoi(vars["height"])
-	utils.HandleErr(err)
-	block, err := blockchain.GetBlockchain().GetBlock(blockNum)
+	// Get block from hash
+	hash := vars["hash"]
+
+	block, err := blockchain.FindBlock(hash)
 
 	// Encoding
 	encoder := json.NewEncoder(w)
@@ -98,6 +78,26 @@ func block(w http.ResponseWriter, r *http.Request) {
 		encoder.Encode(errorResponse{fmt.Sprint(err)})
 	} else {
 		encoder.Encode(block)
+	}
+}
+
+// View all blocks
+func blocks(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "GET":
+		// Encoding
+		json.NewEncoder(w).Encode(blockchain.Blockchain().Blocks())
+	case "POST":
+		var a addBlockBody
+
+		// Decoding
+		utils.HandleErr(json.NewDecoder(r.Body).Decode(&a))
+
+		// Add block
+		blockchain.Blockchain().AddBlock(a.Message)
+
+		// Encoding
+		w.WriteHeader(http.StatusCreated)
 	}
 }
 
@@ -118,7 +118,7 @@ func Start(aPort int) {
 	NewMux.Use(jsonContentTypeMiddleware)
 	NewMux.HandleFunc("/", documentation).Methods("GET")
 	NewMux.HandleFunc("/blocks", blocks).Methods("GET", "POST")
-	NewMux.HandleFunc("/blocks/{height:[0-9]+}", block).Methods("GET")
+	NewMux.HandleFunc("/blocks/{hash:[a-f0-9]+}", block).Methods("GET")
 
 	fmt.Printf("Listening on http://localhost%s\n", port)
 

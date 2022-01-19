@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"text/template"
 )
 
@@ -12,8 +13,10 @@ const (
 	templateDir string = "explorer/templates/"
 )
 
-var tmpl *template.Template
-var port string
+var (
+	tmpl *template.Template
+	port string
+)
 
 type pageData struct {
 	PageTitle  string
@@ -21,11 +24,14 @@ type pageData struct {
 	Blocks     []*blockchain.Block
 }
 
+// Handle func
+// home
 func home(rw http.ResponseWriter, rq *http.Request) {
-	data := pageData{"HomePage", "HomePage", blockchain.GetBlockchain().AllBlocks()}
+	data := pageData{"HomePage", "HomePage", blockchain.Blockchain().Blocks()}
 	tmpl.ExecuteTemplate(rw, "home", data)
 }
 
+//add block
 func add(w http.ResponseWriter, r *http.Request) {
 	data := pageData{"AddPage", "Add Block", nil}
 	switch r.Method {
@@ -34,12 +40,16 @@ func add(w http.ResponseWriter, r *http.Request) {
 	case "POST":
 		r.ParseForm()
 		blockData := r.Form.Get("blockData")
-		blockchain.GetBlockchain().AddBlock(blockData)
+		blockchain.Blockchain().AddBlock(blockData)
+		if blockData == "시스템 종료" {
+			os.Exit(1)
+		}
 		http.Redirect(w, r, "/", http.StatusPermanentRedirect)
 		fmt.Println("Add Block", blockData)
 	}
 }
 
+// Start Server
 func Start(aPort int) {
 	port = fmt.Sprintf(":%d", aPort)
 	tmpl = template.Must(template.ParseGlob(templateDir + "pages/*.gohtml"))
@@ -51,4 +61,5 @@ func Start(aPort int) {
 
 	fmt.Printf("Listening on http://localhost%s\n", port)
 	log.Fatal(http.ListenAndServe(port, mux))
+	fmt.Println("A")
 }
