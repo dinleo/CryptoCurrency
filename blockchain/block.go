@@ -3,16 +3,19 @@ package blockchain
 import (
 	"CryptoCurrency/db"
 	"CryptoCurrency/utils"
-	"crypto/sha256"
 	"errors"
-	"fmt"
+	"strings"
+	"time"
 )
 
 type Block struct {
-	Data     string `json:"data"`
-	Hash     string `json:"hash"`
-	PrevHash string `json:"prevHash,omitempty"`
-	Height   int    `json:"height"`
+	Data       string `json:"data"`
+	Hash       string `json:"hash"`
+	PrevHash   string `json:"prevHash,omitempty"`
+	Height     int    `json:"height"`
+	Difficulty int    `json:"difficulty"`
+	Nonce      int    `json:"nonce"`
+	Timestamp  int    `json:"timestamp"`
 }
 
 var ErrNotFound = errors.New("block not found")
@@ -27,20 +30,35 @@ func (b *Block) restore(data []byte) {
 	utils.FromBytes(b, data)
 }
 
+// Mine block by finding Nonce that can make collect hash and saving Timestamp when done
+func (b *Block) mine() {
+	target := strings.Repeat("0", b.Difficulty)
+	for {
+		b.Timestamp = int(time.Now().Unix())
+		hash := utils.Hash(b)
+		if strings.HasPrefix(hash, target) {
+			b.Hash = hash
+			break
+		} else {
+			b.Nonce++
+		}
+	}
+}
+
 // Create New Block and save to DB
 func createBlock(data string, prevHash string, height int) *Block {
 	// Creating
 	block := Block{
-		Data:     data,
-		Hash:     "",
-		PrevHash: prevHash,
-		Height:   height,
+		Data:       data,
+		Hash:       "",
+		PrevHash:   prevHash,
+		Height:     height,
+		Difficulty: Blockchain().difficulty(),
+		Nonce:      0,
 	}
 
-	// Hashing
-	payload := block.Data + block.PrevHash + fmt.Sprint(block.Height)
-	block.Hash = fmt.Sprintf("%x", sha256.Sum256([]byte(payload)))
-
+	// Mining
+	block.mine()
 	// Persist
 	block.persist()
 

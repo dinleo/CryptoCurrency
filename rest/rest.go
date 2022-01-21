@@ -46,6 +46,11 @@ func documentation(w http.ResponseWriter, r *http.Request) {
 			Description: "See Documentation",
 		},
 		{
+			URL:         url("/status"),
+			Method:      "GET",
+			Description: "See Blockchain status",
+		},
+		{
 			URL:         url("/blocks"),
 			Method:      "POST",
 			Description: "Add A Block",
@@ -79,6 +84,11 @@ func block(w http.ResponseWriter, r *http.Request) {
 	} else {
 		encoder.Encode(block)
 	}
+}
+
+// View blockchain status
+func status(w http.ResponseWriter, r *http.Request) {
+	json.NewEncoder(w).Encode(blockchain.Blockchain())
 }
 
 // View all blocks
@@ -117,6 +127,7 @@ func Start(aPort int) {
 	NewMux := mux.NewRouter()
 	NewMux.Use(jsonContentTypeMiddleware)
 	NewMux.HandleFunc("/", documentation).Methods("GET")
+	NewMux.HandleFunc("/status", status)
 	NewMux.HandleFunc("/blocks", blocks).Methods("GET", "POST")
 	NewMux.HandleFunc("/blocks/{hash:[a-f0-9]+}", block).Methods("GET")
 

@@ -40,10 +40,10 @@ func add(w http.ResponseWriter, r *http.Request) {
 	case "POST":
 		r.ParseForm()
 		blockData := r.Form.Get("blockData")
-		blockchain.Blockchain().AddBlock(blockData)
 		if blockData == "시스템 종료" {
 			os.Exit(1)
 		}
+		blockchain.Blockchain().AddBlock(blockData)
 		http.Redirect(w, r, "/", http.StatusPermanentRedirect)
 		fmt.Println("Add Block", blockData)
 	}
