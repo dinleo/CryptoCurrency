@@ -8,6 +8,7 @@ import (
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
+	"os"
 )
 
 var port string
@@ -36,6 +37,11 @@ type errorResponse struct {
 	ErrorMessage string `json:"errorMessage"`
 }
 
+type balanceResponse struct {
+	Address string `json:"address"`
+	Balance int    `json:"balance"`
+}
+
 // Handle func
 // Home
 func documentation(w http.ResponseWriter, r *http.Request) {
@@ -60,6 +66,11 @@ func documentation(w http.ResponseWriter, r *http.Request) {
 			URL:         url("/blocks/{hash}"),
 			Method:      "GET",
 			Description: "See A Block",
+		},
+		{
+			URL:         url("/balance/{address"),
+			Method:      "GET",
+			Description: "Get TxOuts for an Address",
 		},
 	}
 
@@ -102,12 +113,28 @@ func blocks(w http.ResponseWriter, r *http.Request) {
 
 		// Decoding
 		utils.HandleErr(json.NewDecoder(r.Body).Decode(&a))
-
+		if a.Message == "종료" {
+			os.Exit(1)
+		}
 		// Add block
-		blockchain.Blockchain().AddBlock(a.Message)
+		blockchain.Blockchain().AddBlock()
 
 		// Encoding
 		w.WriteHeader(http.StatusCreated)
+	}
+}
+
+// View balance for address
+func balance(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	address := vars["address"]
+	total := r.URL.Query().Get("total")
+	switch total {
+	case "true":
+		amount := blockchain.Blockchain().BalanceByAddress(address)
+		json.NewEncoder(w).Encode(balanceResponse{address, amount})
+	default:
+		utils.HandleErr(json.NewEncoder(w).Encode(blockchain.Blockchain().TxOutsByAddress(address)))
 	}
 }
 
@@ -124,15 +151,16 @@ func Start(aPort int) {
 	port = fmt.Sprintf(":%d", aPort)
 
 	// Mux handling
-	NewMux := mux.NewRouter()
-	NewMux.Use(jsonContentTypeMiddleware)
-	NewMux.HandleFunc("/", documentation).Methods("GET")
-	NewMux.HandleFunc("/status", status)
-	NewMux.HandleFunc("/blocks", blocks).Methods("GET", "POST")
-	NewMux.HandleFunc("/blocks/{hash:[a-f0-9]+}", block).Methods("GET")
+	restMux := mux.NewRouter()
+	restMux.Use(jsonContentTypeMiddleware)
+	restMux.HandleFunc("/", documentation).Methods("GET")
+	restMux.HandleFunc("/status", status).Methods("GET")
+	restMux.HandleFunc("/blocks", blocks).Methods("GET", "POST")
+	restMux.HandleFunc("/blocks/{hash:[a-f0-9]+}", block).Methods("GET")
+	restMux.HandleFunc("/balance/{address}", balance)
 
 	fmt.Printf("Listening on http://localhost%s\n", port)
 
 	// Run server
-	log.Fatal(http.ListenAndServe(port, NewMux))
+	log.Fatal(http.ListenAndServe(port, restMux))
 }

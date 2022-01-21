@@ -1,4 +1,4 @@
-{{define "home"}}
+{{define "wallet"}}
 <!DOCTYPE html>
 <html lang="en">
     {{template "head" .PageTitle}}
@@ -6,11 +6,9 @@
     {{template "header" .PageHeader}}
     <main>
         <form method="POST">
-            <button>Exit</button>
+            <input type="text" placeholder="Name of Wallet" required name="walletName" />
+            <button>Find Wallet</button>
         </form>
-    {{range .Blocks}}
-        {{template "block" .}}
-    {{end}}
     </main>
     {{template "footer"}}
 </body>

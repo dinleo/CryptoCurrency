@@ -33,8 +33,8 @@ func (b *blockchain) restore(data []byte) {
 }
 
 // AddBlock create new Block from the data and change LastHash and Height to Block's
-func (b *blockchain) AddBlock(data string) {
-	NewBlock := createBlock(data, b.LastHash, b.Height+1)
+func (b *blockchain) AddBlock() {
+	NewBlock := createBlock(b.LastHash, b.Height+1)
 	b.LastHash = NewBlock.Hash
 	b.Height = NewBlock.Height
 	b.CurrentDifficulty = NewBlock.Difficulty
@@ -85,6 +85,40 @@ func (b *blockchain) difficulty() int {
 	}
 }
 
+// Return []*TxOuts of All Transactions exist
+func (b *blockchain) txOuts() []*TxOuts {
+	var txOuts []*TxOuts
+	blocks := b.Blocks()
+	for _, block := range blocks {
+		for _, tx := range block.Transactions {
+			txOuts = append(txOuts, tx.TxOuts...)
+		}
+	}
+	return txOuts
+}
+
+// TxOutsByAddress return []*TxOuts of All Transactions for an address
+func (b *blockchain) TxOutsByAddress(address string) []*TxOuts {
+	var ownedTxOuts []*TxOuts
+	txOuts := b.txOuts()
+	for _, txOut := range txOuts {
+		if txOut.Owner == address {
+			ownedTxOuts = append(ownedTxOuts, txOut)
+		}
+	}
+	return ownedTxOuts
+}
+
+// BalanceByAddress return Balance for an address
+func (b *blockchain) BalanceByAddress(address string) int {
+	txOuts := b.TxOutsByAddress(address)
+	var amount int
+	for _, txOut := range txOuts {
+		amount += txOut.Amount
+	}
+	return amount
+}
+
 // Blockchain return blockchain object or create if not exist
 func Blockchain() *blockchain {
 	// Create blockchain if not exist else return bc
@@ -95,7 +129,7 @@ func Blockchain() *blockchain {
 
 			// Create block & DB if not exist else get LastHash & Height from checkpoint
 			if checkpoint == nil {
-				bc.AddBlock("Genesis Block")
+				bc.AddBlock()
 			} else {
 				bc.restore(checkpoint)
 			}
