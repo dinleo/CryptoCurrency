@@ -5,9 +5,6 @@
 <body>
     {{template "header" .PageHeader}}
     <main>
-        <form method="POST">
-            <button>Exit</button>
-        </form>
     {{range .Blocks}}
         {{template "block" .}}
     {{end}}

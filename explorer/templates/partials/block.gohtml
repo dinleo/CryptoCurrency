@@ -1,6 +1,7 @@
 {{define "block"}}
     <div>
         <ul>
+            <li>Name: {{.Name}}</li>
             <li>Hash: {{.Hash}}</li>
             {{if .PrevHash}}
                 <li>{{.PrevHash}}</li>

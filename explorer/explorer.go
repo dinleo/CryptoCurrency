@@ -23,19 +23,18 @@ type pageData struct {
 	PageTitle  string
 	PageHeader string
 	Blocks     []*blockchain.Block
-	TxOuts     []*blockchain.TxOuts
+	TxOuts     []*blockchain.UTxOut
 }
 
 // Handle func
 // home
 func home(w http.ResponseWriter, r *http.Request) {
-	data := pageData{PageTitle: "HomePage", PageHeader: "HomePage", Blocks: blockchain.Blockchain().Blocks()}
-	switch r.Method {
-	case "GET":
-		tmpl.ExecuteTemplate(w, "home", data)
-	case "POST":
-		os.Exit(1)
-	}
+	data := pageData{PageTitle: "HomePage", PageHeader: "HomePage", Blocks: blockchain.Blocks(blockchain.Blockchain())}
+	tmpl.ExecuteTemplate(w, "home", data)
+}
+
+func exit(w http.ResponseWriter, r *http.Request) {
+	os.Exit(1)
 }
 
 //add block
@@ -46,10 +45,10 @@ func add(w http.ResponseWriter, r *http.Request) {
 		tmpl.ExecuteTemplate(w, "add", data)
 	case "POST":
 		r.ParseForm()
-		blockData := r.Form.Get("blockData")
-		blockchain.Blockchain().AddBlock()
+		name := r.Form.Get("blockName")
+		blockchain.Blockchain().AddBlock(name)
 		http.Redirect(w, r, "/", http.StatusPermanentRedirect)
-		fmt.Println("Add Block", blockData)
+		fmt.Println("Add Block", name)
 	}
 }
 
@@ -70,7 +69,7 @@ func balance(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	address := vars["address"]
-	data := pageData{PageTitle: "Balance", PageHeader: "View Balance", TxOuts: blockchain.Blockchain().TxOutsByAddress(address)}
+	data := pageData{PageTitle: "Balance", PageHeader: "View Balance", TxOuts: blockchain.UTxOutsByAddress(address, blockchain.Blockchain())}
 	tmpl.ExecuteTemplate(w, "balance", data)
 }
 
@@ -82,6 +81,7 @@ func Start(aPort int) {
 
 	htmlMux := mux.NewRouter()
 	htmlMux.HandleFunc("/", home)
+	htmlMux.HandleFunc("/exit", exit)
 	htmlMux.HandleFunc("/add", add)
 	htmlMux.HandleFunc("/wallet", wallet)
 	htmlMux.HandleFunc("/balance/{address}", balance)

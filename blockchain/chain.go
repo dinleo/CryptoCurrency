@@ -22,10 +22,7 @@ const (
 var bc *blockchain
 var once sync.Once
 
-// Save LastHash and Height to DB checkpoint
-func (b *blockchain) persist() {
-	db.SaveBlockchain(utils.ToByte(b))
-}
+// Method
 
 // Restore blockchain by decoding []byte of data
 func (b *blockchain) restore(data []byte) {
@@ -33,16 +30,90 @@ func (b *blockchain) restore(data []byte) {
 }
 
 // AddBlock create new Block from the data and change LastHash and Height to Block's
-func (b *blockchain) AddBlock() {
-	NewBlock := createBlock(b.LastHash, b.Height+1)
+func (b *blockchain) AddBlock(data string) {
+	NewBlock := createBlock(b.LastHash, b.Height+1, data, getDifficulty(b))
 	b.LastHash = NewBlock.Hash
 	b.Height = NewBlock.Height
 	b.CurrentDifficulty = NewBlock.Difficulty
-	b.persist()
+	persist(b)
 }
 
-// Blocks return []*Block of All Block exist
-func (b *blockchain) Blocks() []*Block {
+// Function
+
+// Save LastHash and Height to DB checkpoint
+func persist(b *blockchain) {
+	db.SaveBlockchain(utils.ToByte(b))
+}
+
+// Recalculate getDifficulty based on block creating speed
+func recalculateDifficulty(b *blockchain) int {
+	allBlocks := Blocks(b)
+	newestBlock := allBlocks[0]
+	lastRecalculatedBlock := allBlocks[difficultyInterval-1]
+	actualTime := (newestBlock.Timestamp - lastRecalculatedBlock.Timestamp) / 60
+	expectedTime := difficultyInterval * blockInterval
+	if actualTime < (expectedTime - allowedRange) {
+		return b.CurrentDifficulty + 1
+	} else if actualTime > (expectedTime + allowedRange) {
+		return b.CurrentDifficulty - 1
+	} else {
+		return b.CurrentDifficulty
+	}
+}
+
+// Adjust getDifficulty for every blockInterval block
+func getDifficulty(b *blockchain) int {
+	if b.Height == 0 {
+		return defaultDifficulty
+	} else if b.Height%difficultyInterval == 0 {
+		return recalculateDifficulty(b)
+	} else {
+		return b.CurrentDifficulty
+	}
+}
+
+// UTxOutsByAddress return []*UTxOut of all unspent Tx for an address
+func UTxOutsByAddress(address string, b *blockchain) []*UTxOut {
+	var uTxOuts []*UTxOut
+
+	usedTxId := make(map[string]bool)
+	for _, block := range Blocks(b) {
+		for _, tx := range block.Transactions {
+			for _, input := range tx.TxIns {
+				if input.Owner == address {
+					// Find TxId already used as TxIns until just before Tx
+					usedTxId[input.TxId] = true
+				}
+			}
+			for index, output := range tx.TxOuts {
+				if output.Owner == address {
+					_, used := usedTxId[tx.Id]
+					if !used {
+						// Append only not used TxOut yet
+						uTxOut := &UTxOut{tx.Id, index, output.Amount}
+						if !isOnMempool(uTxOut) {
+							uTxOuts = append(uTxOuts, uTxOut)
+						}
+					}
+				}
+			}
+		}
+	}
+	return uTxOuts
+}
+
+// BalanceByAddress return Balance for an address
+func BalanceByAddress(address string, b *blockchain) int {
+	txOuts := UTxOutsByAddress(address, b)
+	var amount int
+	for _, txOut := range txOuts {
+		amount += txOut.Amount
+	}
+	return amount
+}
+
+// Blocks return []*Block of all Block exist
+func Blocks(b *blockchain) []*Block {
 	var blocks []*Block
 	hashCursor := b.LastHash
 	for {
@@ -57,83 +128,19 @@ func (b *blockchain) Blocks() []*Block {
 	return blocks
 }
 
-// Recalculate difficulty so that only blockInterval blocks are created per minute
-// Increase difficulty if actualTime is less than expectedTime else decrease
-func (b *blockchain) recalculateDifficulty() int {
-	allBlocks := b.Blocks()
-	newestBlock := allBlocks[0]
-	lastRecalculatedBlock := allBlocks[difficultyInterval-1]
-	actualTime := (newestBlock.Timestamp - lastRecalculatedBlock.Timestamp) / 60
-	expectedTime := difficultyInterval * blockInterval
-	if actualTime < (expectedTime - allowedRange) {
-		return b.CurrentDifficulty + 1
-	} else if actualTime > (expectedTime + allowedRange) {
-		return b.CurrentDifficulty - 1
-	} else {
-		return b.CurrentDifficulty
-	}
-}
-
-// Adjust difficulty for every blockInterval block
-func (b *blockchain) difficulty() int {
-	if b.Height == 0 {
-		return defaultDifficulty
-	} else if b.Height%difficultyInterval == 0 {
-		return b.recalculateDifficulty()
-	} else {
-		return b.CurrentDifficulty
-	}
-}
-
-// Return []*TxOuts of All Transactions exist
-func (b *blockchain) txOuts() []*TxOuts {
-	var txOuts []*TxOuts
-	blocks := b.Blocks()
-	for _, block := range blocks {
-		for _, tx := range block.Transactions {
-			txOuts = append(txOuts, tx.TxOuts...)
-		}
-	}
-	return txOuts
-}
-
-// TxOutsByAddress return []*TxOuts of All Transactions for an address
-func (b *blockchain) TxOutsByAddress(address string) []*TxOuts {
-	var ownedTxOuts []*TxOuts
-	txOuts := b.txOuts()
-	for _, txOut := range txOuts {
-		if txOut.Owner == address {
-			ownedTxOuts = append(ownedTxOuts, txOut)
-		}
-	}
-	return ownedTxOuts
-}
-
-// BalanceByAddress return Balance for an address
-func (b *blockchain) BalanceByAddress(address string) int {
-	txOuts := b.TxOutsByAddress(address)
-	var amount int
-	for _, txOut := range txOuts {
-		amount += txOut.Amount
-	}
-	return amount
-}
-
 // Blockchain return blockchain object or create if not exist
 func Blockchain() *blockchain {
 	// Create blockchain if not exist else return bc
-	if bc == nil {
-		once.Do(func() {
-			bc = &blockchain{Height: 0}
-			checkpoint := db.Checkpoint()
+	once.Do(func() {
+		bc = &blockchain{Height: 0}
+		checkpoint := db.Checkpoint()
 
-			// Create block & DB if not exist else get LastHash & Height from checkpoint
-			if checkpoint == nil {
-				bc.AddBlock()
-			} else {
-				bc.restore(checkpoint)
-			}
-		})
-	}
+		// Create block & DB if not exist else get LastHash & Height from checkpoint
+		if checkpoint == nil {
+			bc.AddBlock("Genesis Block")
+		} else {
+			bc.restore(checkpoint)
+		}
+	})
 	return bc
 }

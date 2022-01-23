@@ -38,7 +38,7 @@ func Close() {
 	DB().Close()
 }
 
-// SaveBlock save Hash and Data to DB in {Hash:Data} pair format
+// SaveBlock save Hash and Name to DB in {Hash:Name} pair format
 func SaveBlock(hash string, data []byte) {
 	DB().Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(blocksBucket))
@@ -48,7 +48,7 @@ func SaveBlock(hash string, data []byte) {
 	})
 }
 
-// SaveBlockchain save Data to DB in {"checkpoint":Data} pair format
+// SaveBlockchain save Name to DB in {"checkpoint":Name} pair format
 func SaveBlockchain(data []byte) {
 	DB().Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(dataBucket))
