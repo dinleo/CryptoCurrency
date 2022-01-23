@@ -20,7 +20,7 @@
         <h4>2. REST API</h4>
         <ul>
             <li>Start : go run main.go -mode=rest -port=4000</li>
-            <li>API request : Possible API request is in api.http</li>
+            <li>API Request : Possible API request is in api.http</li>
         </ul>
     </div>
 </body>
