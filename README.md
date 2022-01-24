@@ -13,7 +13,6 @@
     <h4>1. HTML</h4>
     <ul>
         <li>Start : go run main.go -mode=html -port=4000</li>
-        <li>or you can test Making Tx, Add Blocks on http://1860-125-177-47-94.ngrok.io</li>
     </ul>
     <h4>2. REST API</h4>
     <ul>
