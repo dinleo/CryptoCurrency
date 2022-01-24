@@ -6,10 +6,13 @@
     {{template "header" .PageHeader}}
     <main>
         <form method="POST">
-            <h5>Creating Tx: Send coin wallet to wallet</h5>
-            <input type="text" placeholder="from   (ex: BaseMiner)" required name="from" />
-            <input type="text" placeholder="to   (ex: leo)" required name="to" />
-            <input type="text" placeholder="amount   (ex: 30)" required name="amount" />
+            <h4>Creating Tx: Send coin wallet to wallet</h4>
+            <span><b>From:</b> should have enough balance</span>
+            <input type="text" placeholder="ex: BaseMiner" required name="from" />
+            <span><b>To:</b> make wallet if not exist</span>
+            <input type="text" placeholder="ex: leo" required name="to" />
+            <span><b>Amount:</b> should be more than 0</span>
+            <input type="text" placeholder="ex: 30" required name="amount" />
             <button>Make Transaction</button>
         </form>
         {{range .Wallets}}

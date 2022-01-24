@@ -19,7 +19,7 @@
         <li>Start : go run main.go -mode=rest -port=4000</li>
         <li>API request : Possible API request is in api.http</li>
     </ul>
-    <h4>This Code not complete yet</h4>
+    <h4>This Code is still under construction.</h4>
     <ul>
         <li>There are some hard code
             <ul>
