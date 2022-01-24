@@ -26,12 +26,19 @@
             <ul>
                 <li>Only BaseMiner can mining</li>
                 <li>Miner Reward is 50</li>
+                <li>Wallet is now just string</li>
             </ul>
-        <li>Also have Bugs</li>
+        <li>Also have Bug</li>
             <ul>
                 <li>You can't use your balance on mempool even if change exist</li>
                 <li>Miner Reward is 50</li>
             </ul>
+        <li>Functions that haven't been implemented yet</li>
+        <ul>
+            <li>Wallet</li>
+            <li>P2P</li>
+            <li>Pretty FrontEnd</li>
+        </ul>
     </ul>
 </div>
 </body>
