@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"text/template"
 )
 
@@ -22,22 +23,60 @@ var (
 type pageData struct {
 	PageTitle  string
 	PageHeader string
+	Wallets    []Wallets
 	Blocks     []*blockchain.Block
-	TxOuts     []*blockchain.UTxOut
+	UTxOuts    []*blockchain.UTxOut
+	MemTx      []*blockchain.Tx
+}
+
+type Wallets struct {
+	WalletName string
+	Balance    int
+}
+
+type addTxPayload struct {
+	From   string `json:"from"`
+	To     string `json:"to"`
+	Amount int    `json:"amount"`
 }
 
 // Handle func
-// home
 func home(w http.ResponseWriter, r *http.Request) {
 	data := pageData{PageTitle: "HomePage", PageHeader: "HomePage", Blocks: blockchain.Blocks(blockchain.Blockchain())}
 	tmpl.ExecuteTemplate(w, "home", data)
 }
 
-func exit(w http.ResponseWriter, r *http.Request) {
-	os.Exit(1)
+func wallets(w http.ResponseWriter, r *http.Request) {
+	var wallets []Wallets
+	for _, u := range blockchain.Wallets(blockchain.Blockchain()) {
+		wallet := Wallets{WalletName: u, Balance: blockchain.BalanceByAddress(u, blockchain.Blockchain())}
+		wallets = append(wallets, wallet)
+	}
+	data := pageData{PageTitle: "Wallets", PageHeader: "Wallet", Wallets: wallets}
+	switch r.Method {
+	case "GET":
+		tmpl.ExecuteTemplate(w, "wallets", data)
+	case "POST":
+		var payload addTxPayload
+		r.ParseForm()
+		payload.From = r.Form.Get("from")
+		payload.To = r.Form.Get("to")
+		payload.Amount, _ = strconv.Atoi(r.Form.Get("amount"))
+		err := blockchain.Mempool.AddTx(payload.From, payload.To, payload.Amount)
+		if err == nil {
+			http.Redirect(w, r, "/mempool", http.StatusPermanentRedirect)
+			fmt.Println("Make transaction", payload)
+		}
+		fmt.Fprintf(w, "err: %s", err)
+	}
 }
 
-//add block
+func mempool(w http.ResponseWriter, r *http.Request) {
+	Tx := blockchain.Mempool.Txs
+	data := pageData{PageTitle: "Mempool", PageHeader: "Memory Pool", MemTx: Tx}
+	tmpl.ExecuteTemplate(w, "mempool", data)
+}
+
 func add(w http.ResponseWriter, r *http.Request) {
 	data := pageData{PageTitle: "AddPage", PageHeader: "Add Block"}
 	switch r.Method {
@@ -52,25 +91,8 @@ func add(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func wallet(w http.ResponseWriter, r *http.Request) {
-	data := pageData{PageTitle: "Wallet", PageHeader: "Find Wallet"}
-	switch r.Method {
-	case "GET":
-		tmpl.ExecuteTemplate(w, "wallet", data)
-	case "POST":
-		r.ParseForm()
-		walletName := r.Form.Get("walletName")
-		address := "/balance/" + walletName
-		http.Redirect(w, r, address, http.StatusPermanentRedirect)
-	}
-}
-
-func balance(w http.ResponseWriter, r *http.Request) {
-
-	vars := mux.Vars(r)
-	address := vars["address"]
-	data := pageData{PageTitle: "Balance", PageHeader: "View Balance", TxOuts: blockchain.UTxOutsByAddress(address, blockchain.Blockchain())}
-	tmpl.ExecuteTemplate(w, "balance", data)
+func exit(w http.ResponseWriter, r *http.Request) {
+	os.Exit(1)
 }
 
 // Start Server
@@ -81,10 +103,10 @@ func Start(aPort int) {
 
 	htmlMux := mux.NewRouter()
 	htmlMux.HandleFunc("/", home)
-	htmlMux.HandleFunc("/exit", exit)
+	htmlMux.HandleFunc("/wallets", wallets)
+	htmlMux.HandleFunc("/mempool", mempool)
 	htmlMux.HandleFunc("/add", add)
-	htmlMux.HandleFunc("/wallet", wallet)
-	htmlMux.HandleFunc("/balance/{address}", balance)
+	htmlMux.HandleFunc("/exit", exit)
 
 	fmt.Printf("Listening on http://localhost%s\n", port)
 	log.Fatal(http.ListenAndServe(port, htmlMux))

@@ -1,7 +1,7 @@
 {{define "block"}}
     <div>
         <ul>
-            <li>Name: {{.Name}}</li>
+            <li><h4>Block Name: {{.Name}}</h4></li>
             <li>Hash: {{.Hash}}</li>
             {{if .PrevHash}}
                 <li>{{.PrevHash}}</li>
@@ -10,7 +10,7 @@
             <li>Difficulty: {{.Difficulty}}</li>
             <li>Nonce: {{.Nonce}}</li>
             <li>Timestamp: {{.Timestamp}}</li>
-            <li>Transaction: {{.Transactions}}</li>
+            {{template "transactions" .Transactions}}
         </ul>
     </div>
     <hr />

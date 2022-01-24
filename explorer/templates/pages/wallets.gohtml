@@ -1,0 +1,27 @@
+{{define "wallets"}}
+<!DOCTYPE html>
+<html lang="en">
+    {{template "head" .PageTitle}}
+<body>
+    {{template "header" .PageHeader}}
+    <main>
+        <form method="POST">
+            <h5>Creating Tx: Send coin wallet to wallet</h5>
+            <input type="text" placeholder="from   (ex: BaseMiner)" required name="from" />
+            <input type="text" placeholder="to   (ex: leo)" required name="to" />
+            <input type="text" placeholder="amount   (ex: 30)" required name="amount" />
+            <button>Make Transaction</button>
+        </form>
+        {{range .Wallets}}
+            <div>
+                <ul>
+                    <li>Wallet: {{.WalletName}}</li>
+                    <li>Balance: {{.Balance}}</li>
+                </ul>
+            </div>
+        {{end}}
+    </main>
+    {{template "footer"}}
+</body>
+</html>
+{{end}}

@@ -103,8 +103,8 @@ func makeTx(from, to string, amount int) (*Tx, error) {
 	return tx, nil
 }
 
-func (m *mempool) AddTx(to string, amount int) error {
-	tx, err := makeTx("leo", to, amount)
+func (m *mempool) AddTx(from string, to string, amount int) error {
+	tx, err := makeTx(from, to, amount)
 	if err != nil {
 		return err
 	}
@@ -114,7 +114,7 @@ func (m *mempool) AddTx(to string, amount int) error {
 
 // TxConfirm return Tx that all in mempool + miner reward
 func (m *mempool) TxConfirm() []*Tx {
-	coinbase := makeCoinbaseTx("leo")
+	coinbase := makeCoinbaseTx("BaseMiner")
 	txs := m.Txs
 	txs = append(txs, coinbase)
 	m.Txs = nil

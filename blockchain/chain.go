@@ -112,6 +112,23 @@ func BalanceByAddress(address string, b *blockchain) int {
 	return amount
 }
 
+// Wallets return all wallets exists
+func Wallets(b *blockchain) []string {
+	walletsMap := make(map[string]bool)
+	var wallets []string
+	for _, block := range Blocks(b) {
+		for _, tx := range block.Transactions {
+			for _, output := range tx.TxOuts {
+				walletsMap[output.Owner] = true
+			}
+		}
+	}
+	for w, _ := range walletsMap {
+		wallets = append(wallets, w)
+	}
+	return wallets
+}
+
 // Blocks return []*Block of all Block exist
 func Blocks(b *blockchain) []*Block {
 	var blocks []*Block

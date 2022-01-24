@@ -1,0 +1,14 @@
+{{define "mempool"}}
+    <!DOCTYPE html>
+    <html lang="en">
+        {{template "head" .PageTitle}}
+    <body>
+        {{template "header" .PageHeader}}
+        <main>
+        <a href="/add">You should "Add Block" to confirm Transaction</a>
+        {{template "transactions" .MemTx}}
+        </main>
+        {{template "footer"}}
+    </body>
+    </html>
+{{end}}

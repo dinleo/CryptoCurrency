@@ -43,6 +43,7 @@ type balanceResponse struct {
 }
 
 type addTxPayload struct {
+	From   string `json:"from"`
 	To     string `json:"to"`
 	Amount int    `json:"amount"`
 }
@@ -150,7 +151,7 @@ func mempool(w http.ResponseWriter, r *http.Request) {
 func transactions(w http.ResponseWriter, r *http.Request) {
 	var payload addTxPayload
 	utils.HandleErr(json.NewDecoder(r.Body).Decode(&payload))
-	err := blockchain.Mempool.AddTx(payload.To, payload.Amount)
+	err := blockchain.Mempool.AddTx(payload.From, payload.To, payload.Amount)
 	if err == blockchain.ErrNotEnoughBalance {
 		json.NewEncoder(w).Encode(errorResponse{"not enough balance"})
 	} else if err == blockchain.ErrAmountZero {

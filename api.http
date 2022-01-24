@@ -21,19 +21,21 @@ POST http://localhost:4000/blocks
 ### View 2nd Block
 http://localhost:4000/blocks/2
 
-### Balance of leo
-http://localhost:4000/balance/leo
+
+### Balance of BaseMiner
+http://localhost:4000/balance/BaseMiner
 
 
-### Total amount of leo
-http://localhost:4000/balance/leo?total=true
+### Total amount of BaseMiner
+http://localhost:4000/balance/BaseMiner?total=true
 
 
 ### Make transactions
 POST http://localhost:4000/transactions
 
 {
-"to": "John",
+"from": "BaseMiner",
+"to": "leo",
 "amount": 30
 }
 

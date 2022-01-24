@@ -1,0 +1,23 @@
+{{define "transactions"}}
+    {{range .}}
+    <li>Transaction: {{.Id}}</li>
+    <ul>
+        <li>Timestamp: {{.Timestamp}}</li>
+        {{range .TxIns}}
+            <li>TxIns</li>
+            <ul>
+                <li>TxId: {{.TxId}}</li>
+                <li>Index: {{.Index}}</li>
+                <li>Owner: {{.Owner}}</li>
+            </ul>
+        {{end}}
+        {{range .TxOuts}}
+            <li>TxOuts</li>
+            <ul>
+                <li>Owner: {{.Owner}}</li>
+                <li>Amount: {{.Amount}}</li>
+            </ul>
+        {{end}}
+    </ul>
+    {{end}}
+{{end}}
