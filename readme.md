@@ -30,7 +30,6 @@
         <li>Also have Bug</li>
             <ul>
                 <li>You can't use your balance on mempool even if change exist</li>
-                <li>Miner Reward is 50</li>
             </ul>
         <li>Functions not implemented yet</li>
         <ul>
