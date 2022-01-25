@@ -13,6 +13,7 @@
     <h4>1. HTML</h4>
     <ul>
         <li>Start : go run main.go -mode=html -port=4000</li>
+        <li>Or you can test at http://b632-125-177-47-94.ngrok.io </li>
     </ul>
     <h4>2. REST API</h4>
     <ul>
